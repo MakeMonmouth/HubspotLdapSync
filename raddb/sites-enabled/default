@@ -1,0 +1,20 @@
+server my_server {
+  listen {
+        type = auth
+        ipaddr = *
+        port = 1812
+  }
+  authorize {
+        ldap
+        if (ok || updated)  {
+           update control {
+             Auth-Type := ldap
+           }
+        }
+  }
+  authenticate {
+        Auth-Type LDAP {
+                ldap
+        }
+  }
+}

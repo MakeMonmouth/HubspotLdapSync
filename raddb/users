@@ -1,0 +1,3 @@
+bob    Cleartext-Password := "hello"
+       Reply-Message := "Hello, %{User-Name}"
+

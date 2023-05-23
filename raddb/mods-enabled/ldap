@@ -1,0 +1,79 @@
+ldap {
+	server = 'lldap:3890'
+	identity = $ENV{LDAP_SEARCH_USER}
+	password = $ENV{LLDAP_LDAP_USER_PASS}
+	base_dn = $ENV{LDAP_SEARCH_DN}
+	sasl {
+	}
+	global {
+	}
+	update {
+		&control:Password-With-Header	+= 'userPassword'
+		&control:			+= 'radiusControlAttribute'
+		&request:			+= 'radiusRequestAttribute'
+		&reply:				+= 'radiusReplyAttribute'
+	}
+	user {
+		base_dn = "${..base_dn}"
+		filter = "(uid=%{%{Stripped-User-Name}:-%{User-Name}})"
+		sasl {
+		}
+	}
+	group {
+		base_dn = "${..base_dn}"
+		filter = '(objectClass=posixGroup)'
+		membership_attribute = 'memberOf'
+		group_attribute = "${.:instance}-Group"
+	}
+	profile {
+	}
+	accounting {
+		reference = "%{tolower:type.%{Acct-Status-Type}}"
+		type {
+			start {
+				update {
+					description := "Online at %S"
+				}
+			}
+			interim-update {
+				update {
+					description := "Last seen at %S"
+				}
+			}
+			stop {
+				update {
+					description := "Offline at %S"
+				}
+			}
+		}
+	}
+	post-auth {
+		update {
+			description := "Authenticated at %S"
+		}
+	}
+	options {
+		chase_referrals = yes
+		rebind = yes
+		use_referral_credentials = no
+		res_timeout = 10
+		srv_timelimit = 3
+		idle = 60
+		probes = 3
+		interval = 3
+		ldap_debug = 0x0000
+	}
+	tls {
+	}
+	pool {
+		start = 1
+		min = 1
+		max = 5
+		spare = 1
+		uses = 0
+		retry_delay = 30
+		lifetime = 0
+		idle_timeout = 60
+		connect_timeout = 3.0
+	}
+}

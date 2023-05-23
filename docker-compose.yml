@@ -1,0 +1,44 @@
+version: "3"
+
+volumes:
+  lldap_data:
+    driver: local
+
+services:
+  lldap:
+    image: nitnelave/lldap:stable
+    env_file:
+      - .env
+    ports:
+      # For LDAP
+      - "389:3890"
+      # For the web front-end
+      - "17170:17170"
+    volumes:
+      - "lldap_data:/data"
+      # Alternatively, you can mount a local folder
+      # - "./lldap_data:/data"
+    environment:
+      - TZ=Europe/London
+  freeradius:
+    image: freeradius/freeradius-server:latest-3.2-alpine
+    env_file:
+      - .env
+    volumes:
+      - "${PWD}/raddb/mods-enabled/ldap:/etc/raddb/mods-enabled/ldap:ro"
+      - "${PWD}/raddb/sites-enabled/default:/etc/raddb/sites-enabled/default:ro"
+      - "${PWD}/raddb/clients.conf:/etc/raddb/clients.conf:ro"
+      - "${PWD}/raddb/users:/etc/raddb/mods-config/files/authorize:ro"
+      - "${PWD}/logs/:/opt/var/log/radius/radacct/:rw"
+    ports:
+      - "1812-1813:1812-1813/udp"
+    command: ["radiusd", "-X", "-t"] # Debug mode with colour
+    depends_on:
+      - lldap
+  ldapsync:
+    image: ghcr.io/makemonmouth/hubspotldapsync:sha-6df2c7a
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - lldap
