@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.10-slim
+FROM python:3.10-buster
 WORKDIR /app
 COPY pyproject.toml .
 COPY poetry.lock .
