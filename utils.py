@@ -14,7 +14,7 @@ def check_user(cx_method="ldap", user=None, auth_token=None):
             cx = ldap_connection.bind()
             logging.info("Bound to server as admin user")
             logging.info(f"Checking LDAP Server for {user.properties['firstname']} {user.properties['lastname']}")
-            result = ldap_connection.search('ou=people,dc=auth,dc=makemonmouth,dc=co,dc=uk',
+            result = ldap_connection.search('os.getenv("LDAP_SEARCH_DN")',
                               f"(email={user.properties['email']})",
                               attributes=['objectclass', 'memberOf'])
 
@@ -22,18 +22,18 @@ def check_user(cx_method="ldap", user=None, auth_token=None):
                 logging.warning(f"User {user.properties['firstname']} {user.properties['lastname']} not found in LDAP, creating")
                 if user.properties['membership_level'] is not None:
                     ldap_connection.add(
-                            f"cn={user.properties['firstname'].lower()}.{user.properties['lastname'].lower()},ou=people,dc=auth,dc=makemonmouth,dc=co,dc=uk",
+                            f"cn={user.properties['firstname'].lower()}.{user.properties['lastname'].lower()},{os.getenv('LDAP_SEARCH_DN')}",
                             "inetOrgPerson",
                             {
                                 "firstname": user.properties['firstname'],
                                 "lastname": user.properties['lastname'],
                                 "email": user.properties['email'],
-                                "memberOf": [f"cn={user.properties['membership_level'].lower()},ou=groups,dc=auth,dc=makemonmouth,dc=co,dc=uk"],
+                                "memberOf": [f"cn={user.properties['membership_level'].lower()},ou=groups,{os.getenv('LLDAP_LDAP_BASE_DN')}"],
                             }
                             )
                 else:
                     ldap_connection.add(
-                            f"cn={user.properties['firstname'].lower()}.{user.properties['lastname'].lower()},ou=people,dc=auth,dc=makemonmouth,dc=co,dc=uk",
+                            f"cn={user.properties['firstname'].lower()}.{user.properties['lastname'].lower()},{os.getenv('LDAP_SEARCH_DN')}",
                             "inetOrgPerson",
                             {
                                 "firstname": user.properties['firstname'],
@@ -42,7 +42,7 @@ def check_user(cx_method="ldap", user=None, auth_token=None):
                             }
                             )
             else:
-                logging.debug("User found in database, checking group membership")
+                logging.info("User found in database, checking group membership")
                 for group in ldap_connection.entries[0].memberOf:
                     print(group)
         
@@ -104,11 +104,11 @@ def check_user(cx_method="ldap", user=None, auth_token=None):
 
                 if user.properties['membership_level'] is not None:
                     if user.properties['membership_level'].lower() not in current_groups:
-                        logging.debug(f"{user.properties['membership_level']} not found for {user_query['id']}")
+                        logging.info(f"{user.properties['membership_level']} not found for {user_query['id']}")
                         target_group = "guest"
                         for group_data in group_result:
                             if group_data['displayName'] == user.properties['membership_level'].lower():
-                                logging.debug(f"Found group {user.properties['membership_level'].lower()} in directory, adding user to it")
+                                logging.info(f"Found group {user.properties['membership_level'].lower()} in directory, adding user to it")
                                 mod_query_string = f"""
                                     mutation {{
                                       addUserToGroup(userId: "{user_query['id']}", groupId: {group_data['id']}){{
