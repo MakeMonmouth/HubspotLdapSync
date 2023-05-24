@@ -36,7 +36,7 @@ services:
     depends_on:
       - lldap
   ldapsync:
-    image: ghcr.io/makemonmouth/hubspotldapsync:sha-6df2c7a
+    image: ghcr.io/makemonmouth/hubspotldapsync:latest
     restart: always
     env_file:
       - .env
